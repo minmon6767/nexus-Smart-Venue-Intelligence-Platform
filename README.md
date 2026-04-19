@@ -3,7 +3,7 @@
 > **PromptWars Virtual Edition Challenge Submission**
 > _Design a solution that improves the physical event experience for attendees at large-scale sporting venues._
 
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-Google%20Cloud-blue?style=for-the-badge&logo=google-cloud)](YOUR_DEPLOYED_URL)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Google%20Cloud-blue?style=for-the-badge&logo=vercel)](https://nexus-smart-venue-intelligence-plat.vercel.app/)
 [![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 [![Built With](https://img.shields.io/badge/Built%20With-HTML%20%7C%20CSS%20%7C%20JS-orange?style=for-the-badge)]()
 
@@ -62,38 +62,16 @@ NEXUS is a **dual-interface real-time venue intelligence system** with:
 
 ---
 
-## 🚀 Deployment on Google Cloud
-
-### Prerequisites
-- Google Cloud SDK installed
-- Docker installed
-- A Google Cloud project with billing enabled
+## 🚀 Deployment on Vercel
 
 ### Quick Deploy
 
 ```bash
-# 1. Clone the repository
-git clone https://github.com/YOUR_USERNAME/nexus-venue.git
-cd nexus-venue
 
-# 2. Build and push to Google Container Registry
-gcloud builds submit --tag gcr.io/YOUR_PROJECT_ID/nexus-venue
-
-# 3. Deploy to Cloud Run
-gcloud run deploy nexus-venue \
-  --image gcr.io/YOUR_PROJECT_ID/nexus-venue \
-  --platform managed \
-  --region us-central1 \
-  --allow-unauthenticated \
-  --port 8080
-
-# 4. Get your deployed URL
-gcloud run services describe nexus-venue --platform managed --region us-central1 --format 'value(status.url)'
 ```
 
 ### One-Command Deploy (using Cloud Build)
 ```bash
-gcloud run deploy nexus-venue --source . --platform managed --region us-central1 --allow-unauthenticated
 ```
 
 ---
@@ -101,11 +79,6 @@ gcloud run deploy nexus-venue --source . --platform managed --region us-central1
 ## 📁 Project Structure
 
 ```
-nexus-venue/
-├── index.html          # Complete single-file application
-├── Dockerfile          # nginx container for Cloud Run
-├── README.md           # This file
-└── cloudbuild.yaml     # Optional CI/CD config
 ```
 
 ---
