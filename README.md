@@ -3,7 +3,7 @@
 > **PromptWars Virtual Edition Challenge Submission**
 > _Design a solution that improves the physical event experience for attendees at large-scale sporting venues._
 
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-Google%20Cloud-blue?style=for-the-badge&logo=vercel)](https://nexus-smart-venue-intelligence-plat.vercel.app/)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel%20Cloud-blue?style=for-the-badge&logo=vercel)](https://nexus-smart-venue-intelligence-plat.vercel.app/)
 [![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 [![Built With](https://img.shields.io/badge/Built%20With-HTML%20%7C%20CSS%20%7C%20JS-orange?style=for-the-badge)]()
 
