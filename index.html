@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXUS — Smart Venue Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080c14;
+    --bg2: #0d1220;
+    --bg3: #111826;
+    --card: #131927;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --green: #00e5a0;
+    --green2: #00b87a;
+    --amber: #ffb347;
+    --red: #ff4d6d;
+    --blue: #4facfe;
+    --purple: #a78bfa;
+    --text: #e8ecf0;
+    --text2: #8a95a3;
+    --text3: #4d5a6a;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Space Grotesk', sans-serif;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:var(--sans); min-height:100vh; overflow-x:hidden; }
+
+  /* HEADER */
+  header {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:0 28px; height:56px; border-bottom:1px solid var(--border);
+    background:var(--bg2); position:sticky; top:0; z-index:100;
+  }
+  .logo { display:flex; align-items:center; gap:10px; }
+  .logo-icon { width:32px; height:32px; background:var(--green); border-radius:8px; display:flex; align-items:center; justify-content:center; }
+  .logo-icon svg { width:18px; height:18px; }
+  .logo-text { font-size:17px; font-weight:700; letter-spacing:-0.3px; }
+  .logo-sub { font-size:11px; color:var(--text2); font-family:var(--mono); letter-spacing:1.5px; margin-top:-2px; }
+  .header-right { display:flex; align-items:center; gap:20px; }
+  .live-badge { display:flex; align-items:center; gap:6px; background:rgba(0,229,160,0.1); border:1px solid rgba(0,229,160,0.25); border-radius:20px; padding:4px 12px; font-size:12px; font-family:var(--mono); color:var(--green); }
+  .live-dot { width:6px; height:6px; border-radius:50%; background:var(--green); animation:pulse 1.5s ease-in-out infinite; }
+  .event-name { font-size:13px; color:var(--text2); }
+  .event-name span { color:var(--text); font-weight:500; }
+  .time-display { font-family:var(--mono); font-size:13px; color:var(--text2); }
+
+  /* TABS */
+  .tabs { display:flex; gap:2px; padding:16px 28px 0; border-bottom:1px solid var(--border); background:var(--bg2); }
+  .tab { padding:8px 18px 12px; font-size:13px; font-weight:500; color:var(--text2); cursor:pointer; border-bottom:2px solid transparent; transition:all .2s; border-radius:6px 6px 0 0; }
+  .tab:hover { color:var(--text); background:rgba(255,255,255,0.03); }
+  .tab.active { color:var(--green); border-bottom-color:var(--green); }
+
+  /* MAIN LAYOUT */
+  .main { padding:24px 28px; }
+
+  /* METRIC CARDS ROW */
+  .metrics-row { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:20px; }
+  .metric-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:16px 18px; }
+  .metric-card .label { font-size:11px; color:var(--text2); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px; }
+  .metric-card .value { font-size:26px; font-weight:700; font-family:var(--mono); line-height:1; margin-bottom:4px; }
+  .metric-card .sub { font-size:11px; color:var(--text2); }
+  .metric-card .trend { font-size:11px; font-family:var(--mono); margin-top:6px; }
+  .trend-up { color:var(--red); } .trend-down { color:var(--green); } .trend-ok { color:var(--green); }
+  .val-green { color:var(--green); } .val-amber { color:var(--amber); } .val-red { color:var(--red); } .val-blue { color:var(--blue); } .val-white { color:var(--text); }
+
+  /* GRID LAYOUTS */
+  .two-col { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
+  .three-col { display:grid; grid-template-columns:2fr 1fr 1fr; gap:16px; margin-bottom:16px; }
+  .full-row { margin-bottom:16px; }
+
+  /* PANELS */
+  .panel { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:18px; }
+  .panel-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+  .panel-title { font-size:14px; font-weight:600; letter-spacing:-0.2px; }
+  .panel-badge { font-size:10px; font-family:var(--mono); padding:3px 8px; border-radius:20px; }
+  .badge-green { background:rgba(0,229,160,0.12); color:var(--green); border:1px solid rgba(0,229,160,0.2); }
+  .badge-amber { background:rgba(255,179,71,0.12); color:var(--amber); border:1px solid rgba(255,179,71,0.2); }
+  .badge-red { background:rgba(255,77,109,0.12); color:var(--red); border:1px solid rgba(255,77,109,0.2); }
+  .badge-blue { background:rgba(79,172,254,0.12); color:var(--blue); border:1px solid rgba(79,172,254,0.2); }
+
+  /* HEATMAP / STADIUM MAP */
+  #heatmapCanvas { width:100%; border-radius:8px; display:block; }
+  .map-legend { display:flex; gap:16px; margin-top:10px; align-items:center; flex-wrap:wrap; }
+  .legend-item { display:flex; align-items:center; gap:5px; font-size:11px; color:var(--text2); font-family:var(--mono); }
+  .legend-dot { width:10px; height:10px; border-radius:2px; }
+
+  /* GATE TABLE */
+  .gate-table { width:100%; border-collapse:collapse; }
+  .gate-table th { font-size:10px; text-transform:uppercase; letter-spacing:1px; color:var(--text3); padding:0 0 8px; text-align:left; font-weight:500; }
+  .gate-table td { padding:9px 0; border-top:1px solid var(--border); font-size:13px; vertical-align:middle; }
+  .gate-table td:last-child { text-align:right; }
+  .status-pill { display:inline-flex; align-items:center; gap:4px; font-size:11px; font-family:var(--mono); padding:3px 8px; border-radius:20px; }
+  .pill-green { background:rgba(0,229,160,0.1); color:var(--green); }
+  .pill-amber { background:rgba(255,179,71,0.1); color:var(--amber); }
+  .pill-red { background:rgba(255,77,109,0.1); color:var(--red); }
+  .dot-sm { width:5px; height:5px; border-radius:50%; }
+
+  /* QUEUE BARS */
+  .queue-item { margin-bottom:14px; }
+  .queue-item:last-child { margin-bottom:0; }
+  .queue-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; }
+  .queue-name { font-size:13px; font-weight:500; }
+  .queue-time { font-family:var(--mono); font-size:12px; }
+  .bar-track { height:6px; background:rgba(255,255,255,0.06); border-radius:3px; overflow:hidden; }
+  .bar-fill { height:100%; border-radius:3px; transition:width 2s ease; }
+  .bar-green { background:linear-gradient(90deg, var(--green2), var(--green)); }
+  .bar-amber { background:linear-gradient(90deg, #e8940a, var(--amber)); }
+  .bar-red { background:linear-gradient(90deg, #c73052, var(--red)); }
+
+  /* ALERTS */
+  .alert-item { display:flex; gap:12px; padding:10px 12px; border-radius:8px; margin-bottom:8px; border:1px solid; }
+  .alert-item:last-child { margin-bottom:0; }
+  .alert-critical { background:rgba(255,77,109,0.07); border-color:rgba(255,77,109,0.2); }
+  .alert-warning { background:rgba(255,179,71,0.07); border-color:rgba(255,179,71,0.2); }
+  .alert-info { background:rgba(79,172,254,0.07); border-color:rgba(79,172,254,0.2); }
+  .alert-ok { background:rgba(0,229,160,0.07); border-color:rgba(0,229,160,0.2); }
+  .alert-icon { width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:15px; }
+  .icon-red { background:rgba(255,77,109,0.15); }
+  .icon-amber { background:rgba(255,179,71,0.15); }
+  .icon-blue { background:rgba(79,172,254,0.15); }
+  .icon-green { background:rgba(0,229,160,0.15); }
+  .alert-body .alert-title { font-size:13px; font-weight:600; margin-bottom:2px; }
+  .alert-body .alert-desc { font-size:12px; color:var(--text2); line-height:1.4; }
+  .alert-meta { font-size:10px; color:var(--text3); font-family:var(--mono); margin-top:4px; }
+
+  /* MINI CHART */
+  .sparkline { display:flex; align-items:flex-end; gap:3px; height:40px; }
+  .spark-bar { flex:1; border-radius:2px; transition:height .5s; min-width:4px; }
+
+  /* STAFF GRID */
+  .staff-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+  .staff-card { background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:8px; padding:12px; }
+  .staff-card .szone { font-size:11px; color:var(--text2); text-transform:uppercase; letter-spacing:1px; margin-bottom:4px; }
+  .staff-card .scount { font-size:20px; font-weight:700; font-family:var(--mono); }
+  .staff-card .sstatus { font-size:11px; color:var(--text2); margin-top:3px; }
+
+  /* FAN APP VIEW */
+  .phone-wrap { display:flex; justify-content:center; align-items:center; padding:10px 0; }
+  .phone { width:280px; background:#0e1420; border:2px solid var(--border2); border-radius:32px; padding:0; overflow:hidden; box-shadow:0 0 60px rgba(0,0,0,0.5); }
+  .phone-notch { height:28px; background:#080c14; display:flex; align-items:center; justify-content:center; }
+  .phone-notch-inner { width:80px; height:18px; background:#080c14; border-radius:0 0 12px 12px; border:1px solid var(--border); border-top:none; }
+  .phone-screen { padding:16px; }
+  .fan-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+  .fan-title { font-size:16px; font-weight:700; }
+  .fan-seat { font-size:12px; color:var(--text2); margin-top:2px; }
+  .fan-cards { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px; }
+  .fan-card { background:var(--bg3); border-radius:10px; padding:12px; }
+  .fan-card .fc-label { font-size:10px; color:var(--text2); text-transform:uppercase; letter-spacing:0.8px; }
+  .fan-card .fc-val { font-size:18px; font-weight:700; font-family:var(--mono); margin-top:3px; }
+  .nav-btn { background:rgba(0,229,160,0.12); border:1px solid rgba(0,229,160,0.25); color:var(--green); border-radius:10px; padding:10px 14px; font-size:12px; font-weight:600; display:flex; align-items:center; gap:6px; width:100%; margin-bottom:8px; cursor:pointer; }
+  .nav-btn .nb-arrow { margin-left:auto; }
+  .fan-map-mini { height:80px; background:var(--bg3); border-radius:10px; margin-bottom:12px; overflow:hidden; position:relative; }
+  .fan-map-inner { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--text2); font-size:11px; }
+  .route-line { position:absolute; top:50%; left:20px; right:40px; height:2px; background:linear-gradient(90deg, var(--green), var(--blue)); transform:translateY(-50%); border-radius:2px; }
+  .route-dot { position:absolute; width:8px; height:8px; border-radius:50%; top:50%; transform:translateY(-50%); background:var(--green); border:2px solid var(--bg3); }
+  .route-dot.start { left:20px; }
+  .route-dot.end { right:40px; background:var(--blue); animation:blink 1s ease-in-out infinite; }
+  .fan-alert { background:rgba(255,179,71,0.1); border:1px solid rgba(255,179,71,0.2); border-radius:8px; padding:8px 10px; font-size:11px; color:var(--amber); display:flex; align-items:center; gap:6px; }
+
+  /* SECTION TABS */
+  .section-tabs { display:flex; gap:6px; margin-bottom:16px; flex-wrap:wrap; }
+  .stab { padding:5px 12px; border-radius:20px; font-size:12px; cursor:pointer; border:1px solid var(--border2); color:var(--text2); transition:all .2s; }
+  .stab.active { background:rgba(0,229,160,0.12); border-color:rgba(0,229,160,0.3); color:var(--green); }
+
+  /* ANIMATIONS */
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+  .tab-content { display:none; animation:fadeIn .25s ease; }
+  .tab-content.active { display:block; }
+
+  /* SCROLL */
+  ::-webkit-scrollbar { width:4px; }
+  ::-webkit-scrollbar-track { background:transparent; }
+  ::-webkit-scrollbar-thumb { background:var(--border2); border-radius:2px; }
+
+  /* RESPONSIVE */
+  @media(max-width:900px) {
+    .metrics-row { grid-template-columns:repeat(3,1fr); }
+    .three-col { grid-template-columns:1fr; }
+    .two-col { grid-template-columns:1fr; }
+  }
+  @media(max-width:600px) {
+    .metrics-row { grid-template-columns:repeat(2,1fr); }
+    .main { padding:16px; }
+    header { padding:0 16px; }
+    .tabs { padding:12px 16px 0; overflow-x:auto; }
+  }
+
+  /* TREND MINI GRAPH */
+  svg.mini-graph { overflow:visible; }
+
+  /* CONCESSION GRID */
+  .concession-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+  .c-stand { background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:8px; padding:12px; }
+  .c-stand .cs-name { font-size:12px; font-weight:600; margin-bottom:8px; }
+  .c-stand .cs-wait { font-size:22px; font-weight:700; font-family:var(--mono); }
+  .c-stand .cs-min { font-size:11px; color:var(--text2); }
+  .c-stand .cs-status { font-size:10px; margin-top:6px; }
+
+  /* COORDINATION PANEL */
+  .dispatch-log { max-height:200px; overflow-y:auto; }
+  .log-item { display:flex; gap:8px; padding:8px 0; border-bottom:1px solid var(--border); font-size:12px; }
+  .log-item:last-child { border-bottom:none; }
+  .log-time { font-family:var(--mono); color:var(--text3); white-space:nowrap; }
+  .log-text { color:var(--text2); line-height:1.4; }
+  .log-text strong { color:var(--text); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">
+      <svg viewBox="0 0 18 18" fill="none">
+        <circle cx="9" cy="9" r="7" stroke="#080c14" stroke-width="1.5"/>
+        <path d="M5 9h8M9 5v8" stroke="#080c14" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="9" cy="9" r="2" fill="#080c14"/>
+      </svg>
+    </div>
+    <div>
+      <div class="logo-text">NEXUS</div>
+      <div class="logo-sub">VENUE INTELLIGENCE</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="event-name"><span>Champions League Final</span> · Metro Arena · 72,000 cap</div>
+    <div class="live-badge"><span class="live-dot"></span>LIVE</div>
+    <div class="time-display" id="clock">19:42:08</div>
+  </div>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('dashboard')">⬛ Dashboard</div>
+  <div class="tab" onclick="switchTab('crowd')">◎ Crowd Flow</div>
+  <div class="tab" onclick="switchTab('queues')">⏱ Wait Times</div>
+  <div class="tab" onclick="switchTab('staff')">◈ Coordination</div>
+  <div class="tab" onclick="switchTab('fan')">📱 Fan App</div>
+</div>
+
+<!-- ======================== DASHBOARD TAB ======================== -->
+<div class="tab-content active main" id="tab-dashboard">
+  <div class="metrics-row">
+    <div class="metric-card">
+      <div class="label">Occupancy</div>
+      <div class="value val-green" id="m-occ">68,420</div>
+      <div class="sub">of 72,000 capacity</div>
+      <div class="trend trend-up">▲ +1,240 last 10 min</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">Avg. Gate Wait</div>
+      <div class="value val-amber" id="m-wait">4.2<span style="font-size:14px">min</span></div>
+      <div class="sub">Peak: 9.1 min (Gate C)</div>
+      <div class="trend trend-up">▲ +0.8 min vs 5m ago</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">Active Incidents</div>
+      <div class="value val-red" id="m-inc">3</div>
+      <div class="sub">2 critical · 1 warning</div>
+      <div class="trend trend-down">▼ from 5 (20 min ago)</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">Staff On-Duty</div>
+      <div class="value val-blue">412</div>
+      <div class="sub">94% coverage</div>
+      <div class="trend trend-ok">● All zones staffed</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">Crowd Flow Rate</div>
+      <div class="value val-white" id="m-flow">2,840</div>
+      <div class="sub">persons/min entering</div>
+      <div class="trend trend-down" style="color:var(--text2)">→ Steady (near kickoff)</div>
+    </div>
+  </div>
+
+  <div class="three-col">
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">Stadium Crowd Density Map</div>
+        <span class="panel-badge badge-green">LIVE</span>
+      </div>
+      <canvas id="heatmapCanvas" height="280"></canvas>
+      <div class="map-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#00e5a0"></div>Low (0–30%)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#ffb347"></div>Med (30–70%)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#ff4d6d"></div>High (70%+)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#4facfe"></div>Staff</div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      <div class="panel" style="flex:1">
+        <div class="panel-header">
+          <div class="panel-title">Gate Status</div>
+          <span class="panel-badge badge-amber">2 CONGESTED</span>
+        </div>
+        <table class="gate-table">
+          <thead><tr><th>Gate</th><th>Queue</th><th>Wait</th><th>Status</th></tr></thead>
+          <tbody id="gate-tbody"></tbody>
+        </table>
+      </div>
+      <div class="panel" style="flex:none">
+        <div class="panel-header">
+          <div class="panel-title">Entry Flow (last 60 min)</div>
+        </div>
+        <div class="sparkline" id="sparkline"></div>
+        <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:10px;color:var(--text3);font-family:var(--mono)">
+          <span>60m ago</span><span>30m ago</span><span>Now</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">Active Alerts</div>
+        <span class="panel-badge badge-red">3 OPEN</span>
+      </div>
+      <div id="alerts-container"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">Concession Wait Times</div>
+        <span class="panel-badge badge-blue">LIVE</span>
+      </div>
+      <div id="queue-bars"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ======================== CROWD FLOW TAB ======================== -->
+<div class="tab-content main" id="tab-crowd">
+  <div class="two-col">
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">Real-Time Flow Heatmap</div>
+        <span class="panel-badge badge-green">AUTO-UPDATING</span>
+      </div>
+      <canvas id="heatmap2" height="340"></canvas>
+      <div class="map-legend" style="margin-top:12px">
+        <div class="legend-item"><div class="legend-dot" style="background:#00e5a0"></div>Sparse</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#4facfe"></div>Normal</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#ffb347"></div>Dense</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#ff4d6d"></div>Critical</div>
+        <div class="legend-item" style="margin-left:auto;">
+          <span style="color:var(--text2);font-size:11px;font-family:var(--mono)">Bottleneck: Gate C • Section 7N</span>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Bottleneck Analysis</div>
+        </div>
+        <div id="bottleneck-list"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">AI Route Recommendations</div>
+          <span class="panel-badge badge-blue">AI ACTIVE</span>
+        </div>
+        <div id="ai-recs"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title">Crowd Velocity</div></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+          <div style="text-align:center">
+            <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">North</div>
+            <div style="font-size:22px;font-weight:700;font-family:var(--mono);color:var(--green)" id="vel-n">1.8</div>
+            <div style="font-size:10px;color:var(--text2)">m/s avg</div>
+          </div>
+          <div style="text-align:center">
+            <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">East</div>
+            <div style="font-size:22px;font-weight:700;font-family:var(--mono);color:var(--amber)" id="vel-e">0.9</div>
+            <div style="font-size:10px;color:var(--text2)">m/s avg</div>
+          </div>
+          <div style="text-align:center">
+            <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">South</div>
+            <div style="font-size:22px;font-weight:700;font-family:var(--mono);color:var(--green)" id="vel-s">2.1</div>
+            <div style="font-size:10px;color:var(--text2)">m/s avg</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ======================== QUEUES TAB ======================== -->
+<div class="tab-content main" id="tab-queues">
+  <div class="metrics-row" style="grid-template-columns:repeat(4,1fr)">
+    <div class="metric-card">
+      <div class="label">Avg Entry Wait</div>
+      <div class="value val-amber">4.2<span style="font-size:14px">m</span></div>
+      <div class="sub">Across all gates</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">Longest Queue</div>
+      <div class="value val-red">9.1<span style="font-size:14px">m</span></div>
+      <div class="sub">Gate C – North</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">Concession Avg</div>
+      <div class="value val-amber">7.4<span style="font-size:14px">m</span></div>
+      <div class="sub">12 active stands</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">Restrooms Avg</div>
+      <div class="value val-green">2.8<span style="font-size:14px">m</span></div>
+      <div class="sub">36 facilities</div>
+    </div>
+  </div>
+  <div class="two-col">
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">Entry Gates – Queue Times</div>
+        <span class="panel-badge badge-amber">4 GATES MONITORED</span>
+      </div>
+      <div id="gate-queues"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">Concession Stands</div>
+        <span class="panel-badge badge-green">LIVE SENSOR DATA</span>
+      </div>
+      <div class="concession-grid" id="concession-grid"></div>
+    </div>
+  </div>
+  <div class="panel full-row">
+    <div class="panel-header">
+      <div class="panel-title">Smart Queue Prediction – Next 30 Minutes</div>
+      <span class="panel-badge badge-blue">ML FORECAST</span>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px" id="prediction-cards"></div>
+  </div>
+</div>
+
+<!-- ======================== COORDINATION TAB ======================== -->
+<div class="tab-content main" id="tab-staff">
+  <div class="three-col" style="grid-template-columns:1fr 1fr 1fr">
+    <div class="panel">
+      <div class="panel-header"><div class="panel-title">Staff Deployment</div><span class="panel-badge badge-green">94% COVERED</span></div>
+      <div class="staff-grid" id="staff-grid"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-header"><div class="panel-title">Dispatch Log</div><span class="panel-badge badge-blue">REAL-TIME</span></div>
+      <div class="dispatch-log" id="dispatch-log"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-header"><div class="panel-title">Emergency Protocols</div></div>
+      <div id="emergency-protocols"></div>
+    </div>
+  </div>
+  <div class="two-col">
+    <div class="panel">
+      <div class="panel-header"><div class="panel-title">Zone Incident Heatmap</div></div>
+      <canvas id="incidentCanvas" height="200"></canvas>
+    </div>
+    <div class="panel">
+      <div class="panel-header"><div class="panel-title">Radio Channels – Active Comms</div><span class="panel-badge badge-green">LIVE</span></div>
+      <div id="radio-channels"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ======================== FAN APP TAB ======================== -->
+<div class="tab-content main" id="tab-fan">
+  <div class="two-col" style="grid-template-columns:1fr 2fr">
+    <div>
+      <div style="margin-bottom:16px;font-size:13px;color:var(--text2);">
+        Attendee-facing mobile interface. Real-time navigation, queue alerts, and personalized experience.
+      </div>
+      <div class="phone-wrap">
+        <div class="phone">
+          <div class="phone-notch"><div class="phone-notch-inner"></div></div>
+          <div class="phone-screen">
+            <div class="fan-header">
+              <div>
+                <div class="fan-title">Hey, Alex 👋</div>
+                <div class="fan-seat">Seat 34B · Block N7</div>
+              </div>
+              <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--green2),var(--blue));display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700">A</div>
+            </div>
+            <div class="fan-alert" style="margin-bottom:10px">
+              ⚠ Gate C congested — use Gate D (save ~5 min)
+            </div>
+            <div class="fan-map-mini">
+              <div class="route-line"></div>
+              <div class="route-dot start"></div>
+              <div class="route-dot end"></div>
+              <div class="fan-map-inner" style="bottom:6px;top:auto;left:0;right:0;position:absolute;justify-content:flex-end;padding-right:8px">
+                <span style="font-size:9px;color:var(--blue)">Your seat</span>
+              </div>
+            </div>
+            <div class="fan-cards">
+              <div class="fan-card">
+                <div class="fc-label">Nearest Food</div>
+                <div class="fc-val" style="color:var(--green)">2.1<span style="font-size:10px">m</span></div>
+                <div style="font-size:10px;color:var(--text2);margin-top:2px">Stand B4 · 3 min walk</div>
+              </div>
+              <div class="fan-card">
+                <div class="fc-label">Restroom</div>
+                <div class="fc-val" style="color:var(--green)">1.4<span style="font-size:10px">m</span></div>
+                <div style="font-size:10px;color:var(--text2);margin-top:2px">Level 2 · East wing</div>
+              </div>
+            </div>
+            <button class="nav-btn"><span>🗺</span> Navigate to my seat <span class="nb-arrow">→</span></button>
+            <button class="nav-btn" style="background:rgba(79,172,254,0.1);border-color:rgba(79,172,254,0.2);color:var(--blue)"><span>🍕</span> Order food to seat <span class="nb-arrow">→</span></button>
+            <button class="nav-btn" style="background:rgba(255,77,109,0.1);border-color:rgba(255,77,109,0.2);color:var(--red)"><span>🚨</span> Report an issue <span class="nb-arrow">→</span></button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title">Fan Experience Features</div><span class="panel-badge badge-green">ACTIVE</span></div>
+        <div id="fan-features"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title">Smart Notification Engine</div><span class="panel-badge badge-blue">AI-POWERED</span></div>
+        <div id="fan-notifs"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== CLOCK =====
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent =
+    now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+setInterval(updateClock, 1000); updateClock();
+
+// ===== TAB SWITCHING =====
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', ['dashboard','crowd','queues','staff','fan'][i]===name));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  if(name==='crowd') drawHeatmap2();
+  if(name==='staff') drawIncidentMap();
+}
+
+// ===== HEATMAP DRAWING =====
+function drawStadiumHeatmap(canvasId, zones) {
+  const canvas = document.getElementById(canvasId);
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.offsetWidth || 500, H = canvas.height;
+  canvas.width = W;
+  ctx.clearRect(0,0,W,H);
+
+  // Background
+  ctx.fillStyle = '#0d1220';
+  ctx.beginPath(); ctx.roundRect(0,0,W,H,8); ctx.fill();
+
+  // Draw oval stadium
+  const cx=W/2, cy=H/2, rx=W*0.42, ry=H*0.42;
+  ctx.strokeStyle='rgba(255,255,255,0.12)'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.ellipse(cx,cy,rx,ry,0,0,Math.PI*2); ctx.stroke();
+
+  // Pitch
+  ctx.fillStyle='rgba(0,100,50,0.3)'; ctx.strokeStyle='rgba(255,255,255,0.08)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.roundRect(cx-W*0.18,cy-H*0.23,W*0.36,H*0.46,4); ctx.fill(); ctx.stroke();
+
+  // Draw seating zones with density
+  zones.forEach(z => {
+    const color = z.density > 0.8 ? `rgba(255,77,109,${0.3+z.density*0.4})` :
+                  z.density > 0.5 ? `rgba(255,179,71,${0.2+z.density*0.4})` :
+                                    `rgba(0,229,160,${0.1+z.density*0.4})`;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.ellipse(cx+z.ox*W, cy+z.oy*H, z.rw*W, z.rh*H, 0, z.startA, z.endA);
+    ctx.lineTo(cx+z.ox*W, cy+z.oy*H);
+    ctx.fill();
+  });
+
+  // Overlay grid labels
+  const labels = ['N7','N8','E3','E4','S2','S3','W1','W5'];
+  const positions = [
+    [cx,cy-ry*0.65],[cx,cy-ry*0.35],[cx+rx*0.6,cy-ry*0.2],
+    [cx+rx*0.6,cy+ry*0.2],[cx,cy+ry*0.65],[cx,cy+ry*0.35],
+    [cx-rx*0.6,cy-ry*0.2],[cx-rx*0.6,cy+ry*0.2]
+  ];
+  ctx.font='bold 11px JetBrains Mono,monospace';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  positions.forEach((p,i)=>{
+    ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.fillRect(p[0]-16,p[1]-7,32,14);
+    ctx.fillStyle='rgba(255,255,255,0.6)'; ctx.fillText(labels[i],p[0],p[1]);
+  });
+
+  // Staff dots (blue)
+  const staffPos = [[cx-rx*0.1,cy+ry*0.2],[cx+rx*0.3,cy-ry*0.1],[cx-rx*0.4,cy-ry*0.3],[cx+rx*0.05,cy+ry*0.4]];
+  staffPos.forEach(p=>{
+    ctx.fillStyle='rgba(79,172,254,0.9)';
+    ctx.beginPath(); ctx.arc(p[0],p[1],5,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,0.4)'; ctx.lineWidth=1;
+    ctx.stroke();
+  });
+
+  // Gate labels
+  const gates=[{label:'A',x:cx,y:8},{label:'B',x:W-8,y:cy},{label:'C',x:cx,y:H-8},{label:'D',x:8,y:cy}];
+  gates.forEach(g=>{
+    ctx.fillStyle='rgba(255,179,71,0.9)'; ctx.font='bold 10px JetBrains Mono,monospace';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('Gate '+g.label, g.x, g.y);
+  });
+}
+
+const zones = [
+  {ox:0,oy:-0.38,rw:0.38,rh:0.07,startA:Math.PI,endA:0,density:0.4},
+  {ox:0,oy:0.38,rw:0.38,rh:0.07,startA:0,endA:Math.PI,density:0.85},
+  {ox:0.36,oy:0,rw:0.07,rh:0.32,startA:Math.PI*1.5,endA:Math.PI*0.5,density:0.72},
+  {ox:-0.36,oy:0,rw:0.07,rh:0.32,startA:Math.PI*0.5,endA:Math.PI*1.5,density:0.55},
+  {ox:0,oy:-0.22,rw:0.25,rh:0.12,startA:Math.PI,endA:0,density:0.6},
+  {ox:0,oy:0.22,rw:0.25,rh:0.12,startA:0,endA:Math.PI,density:0.93},
+];
+drawStadiumHeatmap('heatmapCanvas', zones);
+window.addEventListener('resize', ()=>drawStadiumHeatmap('heatmapCanvas',zones));
+
+function drawHeatmap2() {
+  const z2=[
+    {ox:0,oy:-0.38,rw:0.38,rh:0.07,startA:Math.PI,endA:0,density:0.35},
+    {ox:0,oy:0.38,rw:0.38,rh:0.07,startA:0,endA:Math.PI,density:0.9},
+    {ox:0.36,oy:0,rw:0.07,rh:0.32,startA:Math.PI*1.5,endA:Math.PI*0.5,density:0.78},
+    {ox:-0.36,oy:0,rw:0.07,rh:0.32,startA:Math.PI*0.5,endA:Math.PI*1.5,density:0.45},
+    {ox:0,oy:-0.22,rw:0.25,rh:0.12,startA:Math.PI,endA:0,density:0.65},
+    {ox:0,oy:0.22,rw:0.25,rh:0.12,startA:0,endA:Math.PI,density:0.97},
+  ];
+  setTimeout(()=>drawStadiumHeatmap('heatmap2',z2),100);
+}
+
+// ===== GATE TABLE =====
+const gates = [
+  {name:'Gate A – North',queue:320,wait:3.8,cap:2400,status:'normal'},
+  {name:'Gate B – East', queue:580,wait:6.2,cap:2400,status:'congested'},
+  {name:'Gate C – South',queue:840,wait:9.1,cap:2400,status:'critical'},
+  {name:'Gate D – West', queue:210,wait:2.4,cap:2400,status:'normal'},
+];
+function renderGates() {
+  const tb = document.getElementById('gate-tbody');
+  tb.innerHTML = gates.map(g=>`
+    <tr>
+      <td style="font-size:12px;font-weight:500">${g.name}</td>
+      <td style="font-family:var(--mono);font-size:12px">${g.queue}</td>
+      <td style="font-family:var(--mono);font-size:13px;color:${g.wait>6?'var(--red)':g.wait>4?'var(--amber)':'var(--green)'}">${g.wait}m</td>
+      <td><span class="status-pill ${g.status==='normal'?'pill-green':g.status==='congested'?'pill-amber':'pill-red'}">
+        <span class="dot-sm" style="background:${g.status==='normal'?'var(--green)':g.status==='congested'?'var(--amber)':'var(--red)'}"></span>
+        ${g.status.toUpperCase()}</span></td>
+    </tr>`).join('');
+}
+renderGates();
+
+// ===== SPARKLINE =====
+const flowData=[520,680,920,1240,1580,1840,2100,2380,2640,2840,2720,2580];
+function renderSparkline() {
+  const el = document.getElementById('sparkline');
+  const max = Math.max(...flowData);
+  el.innerHTML = flowData.map((v,i)=>`
+    <div class="spark-bar" style="height:${(v/max*100)}%;background:${i===flowData.length-1?'var(--green)':i>8?'rgba(0,229,160,0.5)':'rgba(0,229,160,0.25)'}"></div>`
+  ).join('');
+}
+renderSparkline();
+
+// ===== ALERTS =====
+const alerts=[
+  {type:'critical',icon:'🚨',title:'Crowd Crush Risk – Section 7N South Stand',desc:'Density exceeds 4.2 persons/m². Recommend immediate diversion via concourse C. Staff dispatched.',time:'2 min ago',iconClass:'icon-red'},
+  {type:'critical',icon:'⚠️',title:'Gate C Queue Critical – 840 persons waiting',desc:'Wait time 9.1 min. Requesting 4 additional stewards. Open Gate C2 secondary lane.',time:'4 min ago',iconClass:'icon-amber'},
+  {type:'info',icon:'ℹ️',title:'Medical Response – Block E Row 14',desc:'Paramedic unit 3 dispatched. Crowd clearance corridor established. ETA 90 seconds.',time:'7 min ago',iconClass:'icon-blue'},
+];
+document.getElementById('alerts-container').innerHTML = alerts.map(a=>`
+  <div class="alert-item alert-${a.type==='critical'&&a.icon==='🚨'?'critical':a.type==='critical'?'warning':'info'}">
+    <div class="alert-icon ${a.iconClass}">${a.icon}</div>
+    <div class="alert-body">
+      <div class="alert-title">${a.title}</div>
+      <div class="alert-desc">${a.desc}</div>
+      <div class="alert-meta">${a.time} · Auto-assigned to Supervisor Team 2</div>
+    </div>
+  </div>`).join('');
+
+// ===== QUEUE BARS =====
+const queues=[
+  {name:'Concession A – North Stand',wait:7.2,pct:72,color:'bar-amber'},
+  {name:'Concession B – VIP Level 2', wait:2.1,pct:21,color:'bar-green'},
+  {name:'Concession C – South Stand', wait:12.8,pct:100,color:'bar-red'},
+  {name:'Main Bar – East Wing',        wait:5.5,pct:55,color:'bar-amber'},
+  {name:'Fast Food – Gate A Plaza',    wait:3.2,pct:32,color:'bar-green'},
+];
+document.getElementById('queue-bars').innerHTML = queues.map(q=>`
+  <div class="queue-item">
+    <div class="queue-header">
+      <span class="queue-name">${q.name}</span>
+      <span class="queue-time" style="color:${q.pct>75?'var(--red)':q.pct>45?'var(--amber)':'var(--green)'}">${q.wait}m wait</span>
+    </div>
+    <div class="bar-track"><div class="bar-fill ${q.color}" style="width:${q.pct}%"></div></div>
+  </div>`).join('');
+
+// ===== CROWD FLOW TAB =====
+const bottlenecks=[
+  {zone:'Gate C – South Entrance',level:'CRITICAL',density:'4.2/m²',action:'Divert to Gate D'},
+  {zone:'Section 7N – Lower Tier',level:'HIGH',density:'3.8/m²',action:'Open emergency exit'},
+  {zone:'Main Concourse – East',level:'MODERATE',density:'2.9/m²',action:'Staff redeployment'},
+  {zone:'Concession Row B',level:'LOW',density:'2.1/m²',action:'Monitor only'},
+];
+document.getElementById('bottleneck-list').innerHTML = bottlenecks.map(b=>`
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);">
+    <div>
+      <div style="font-size:12px;font-weight:500">${b.zone}</div>
+      <div style="font-size:11px;color:var(--text2);margin-top:2px">${b.action}</div>
+    </div>
+    <div style="text-align:right">
+      <span class="status-pill ${b.level==='CRITICAL'?'pill-red':b.level==='HIGH'?'pill-amber':b.level==='MODERATE'?'pill-amber':'pill-green'}">${b.level}</span>
+      <div style="font-family:var(--mono);font-size:11px;color:var(--text2);margin-top:4px">${b.density}</div>
+    </div>
+  </div>`).join('');
+
+const aiRecs=[
+  {icon:'🔀',text:'Redirect 30% of Gate C traffic to Gates A & D via digital signage'},
+  {icon:'📢',text:'Broadcast announcement: "Faster entry via Gate A — same row access"'},
+  {icon:'👮',text:'Deploy 6 crowd stewards to South Stand concourse immediately'},
+];
+document.getElementById('ai-recs').innerHTML = aiRecs.map(r=>`
+  <div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);align-items:flex-start;font-size:12px">
+    <span style="font-size:16px">${r.icon}</span>
+    <span style="color:var(--text2);line-height:1.5">${r.text}</span>
+  </div>`).join('');
+
+// ===== QUEUES TAB =====
+document.getElementById('gate-queues').innerHTML = gates.map(g=>`
+  <div class="queue-item">
+    <div class="queue-header">
+      <span class="queue-name">${g.name}</span>
+      <span class="queue-time" style="color:${g.wait>6?'var(--red)':g.wait>4?'var(--amber)':'var(--green)'}">${g.wait}m</span>
+    </div>
+    <div class="bar-track"><div class="bar-fill ${g.wait>6?'bar-red':g.wait>4?'bar-amber':'bar-green'}" style="width:${Math.min(100,(g.wait/12)*100)}%"></div></div>
+    <div style="font-size:10px;color:var(--text3);margin-top:4px;font-family:var(--mono)">${g.queue} in queue · ${g.cap} cap/hr</div>
+  </div>`).join('');
+
+const concessions=[
+  {name:'Stand A1',wait:4.2,color:'var(--amber)'},{name:'Stand A2',wait:1.8,color:'var(--green)'},
+  {name:'Stand B1',wait:8.5,color:'var(--red)'},{name:'Stand B2',wait:3.1,color:'var(--green)'},
+  {name:'Main Bar',wait:6.8,color:'var(--amber)'},{name:'VIP Bar',wait:2.0,color:'var(--green)'},
+];
+document.getElementById('concession-grid').innerHTML = concessions.map(c=>`
+  <div class="c-stand">
+    <div class="cs-name">${c.name}</div>
+    <div class="cs-wait" style="color:${c.color}">${c.wait}</div>
+    <div class="cs-min">min wait</div>
+    <div class="cs-status" style="color:${c.wait>6?'var(--red)':c.wait>3?'var(--amber)':'var(--green)'}">${c.wait>6?'⚠ Busy':c.wait>3?'● Moderate':'✓ Short'}</div>
+  </div>`).join('');
+
+const predictions=[
+  {label:'Gate C in 15m',val:'12.4m',color:'var(--red)',icon:'📈'},
+  {label:'Gate A in 15m',val:'5.1m',color:'var(--amber)',icon:'→'},
+  {label:'Stand B1 in 15m',val:'6.2m',color:'var(--amber)',icon:'↗'},
+  {label:'Halftime surge',val:'+2,400',color:'var(--amber)',icon:'⚡',sub:'Expected 20:15'},
+];
+document.getElementById('prediction-cards').innerHTML = predictions.map(p=>`
+  <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px;min-width:150px;flex:1">
+    <div style="font-size:11px;color:var(--text2);margin-bottom:6px">${p.icon} ${p.label}</div>
+    <div style="font-size:22px;font-weight:700;font-family:var(--mono);color:${p.color}">${p.val}</div>
+    ${p.sub?`<div style="font-size:10px;color:var(--text3);margin-top:3px">${p.sub}</div>`:''}
+  </div>`).join('');
+
+// ===== STAFF TAB =====
+const staffZones=[
+  {zone:'North Stands',count:84,status:'Fully staffed'},
+  {zone:'South Stands',count:96,status:'2 needed'},
+  {zone:'East Wing',count:72,status:'Fully staffed'},
+  {zone:'West Wing',count:68,status:'Fully staffed'},
+  {zone:'Gates A–D',count:48,status:'Alert: Gate C'},
+  {zone:'Medical',count:24,status:'On standby'},
+  {zone:'VIP Level',count:18,status:'Fully staffed'},
+  {zone:'Concessions',count:32,status:'Fully staffed'},
+];
+document.getElementById('staff-grid').innerHTML = staffZones.map(s=>`
+  <div class="staff-card">
+    <div class="szone">${s.zone}</div>
+    <div class="scount" style="color:${s.status.includes('needed')||s.status.includes('Alert')?'var(--amber)':'var(--text)'}">${s.count}</div>
+    <div class="sstatus" style="font-size:10px;color:${s.status.includes('needed')||s.status.includes('Alert')?'var(--amber)':'var(--text2)'}">${s.status}</div>
+  </div>`).join('');
+
+const logs=[
+  {t:'19:41',text:'<strong>Unit S4</strong> dispatched to Section 7N South — crowd density alert'},
+  {t:'19:39',text:'Gate C2 secondary lane opened by <strong>Supervisor Hayes</strong>'},
+  {t:'19:37',text:'Medical unit 3 en route to Block E Row 14 — ETA 90s'},
+  {t:'19:35',text:'Automated announcement: Gate C diversion to Gate D broadcast on PA'},
+  {t:'19:33',text:'<strong>4 stewards</strong> redeployed from North Stand to Gate C queue'},
+  {t:'19:30',text:'AI alert triggered: South Stand approaching crush threshold (4.0/m²)'},
+  {t:'19:28',text:'Digital signage updated: Gate A now showing as "FAST ENTRY"'},
+];
+document.getElementById('dispatch-log').innerHTML = logs.map(l=>`
+  <div class="log-item">
+    <span class="log-time">${l.t}</span>
+    <span class="log-text">${l.text}</span>
+  </div>`).join('');
+
+const protocols=[
+  {icon:'🚨',name:'Crowd Crush Protocol',status:'ACTIVE',color:'var(--red)'},
+  {icon:'🚑',name:'Medical Emergency',status:'STANDBY',color:'var(--amber)'},
+  {icon:'🔥',name:'Fire Evacuation',status:'READY',color:'var(--text2)'},
+  {icon:'🔒',name:'Security Lockdown',status:'READY',color:'var(--text2)'},
+  {icon:'🌧',name:'Weather Protocol',status:'READY',color:'var(--text2)'},
+];
+document.getElementById('emergency-protocols').innerHTML = protocols.map(p=>`
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);">
+    <div style="display:flex;align-items:center;gap:10px">
+      <span style="font-size:18px">${p.icon}</span>
+      <span style="font-size:13px;font-weight:500">${p.name}</span>
+    </div>
+    <span class="panel-badge ${p.status==='ACTIVE'?'badge-red':p.status==='STANDBY'?'badge-amber':'badge-green'}">${p.status}</span>
+  </div>`).join('');
+
+const radioChannels=[
+  {ch:'CH 1',label:'Gate Operations',active:true,msg:'Gate C: Open secondary lane NOW'},
+  {ch:'CH 2',label:'Medical Team',active:true,msg:'Unit 3 on route to Block E'},
+  {ch:'CH 3',label:'Security',active:false,msg:'Patrol route update at 20:00'},
+  {ch:'CH 4',label:'Crowd Control',active:true,msg:'South Stand: maintain 3m corridor'},
+  {ch:'CH 5',label:'Supervisor',active:false,msg:'Halftime briefing at 20:15'},
+];
+document.getElementById('radio-channels').innerHTML = radioChannels.map(r=>`
+  <div style="display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);align-items:center">
+    <div style="font-family:var(--mono);font-size:11px;color:var(--text2);min-width:36px">${r.ch}</div>
+    <div style="flex:1">
+      <div style="font-size:12px;font-weight:500;display:flex;align-items:center;gap:6px">
+        ${r.active?'<span style="width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 1s infinite;display:inline-block"></span>':'<span style="width:6px;height:6px;border-radius:50%;background:var(--text3);display:inline-block"></span>'}
+        ${r.label}
+      </div>
+      <div style="font-size:11px;color:var(--text2);margin-top:2px">${r.msg}</div>
+    </div>
+  </div>`).join('');
+
+// ===== INCIDENT CANVAS =====
+function drawIncidentMap() {
+  const c = document.getElementById('incidentCanvas');
+  if(!c) return;
+  const ctx = c.getContext('2d');
+  c.width = c.offsetWidth || 400;
+  ctx.fillStyle='#0d1220'; ctx.beginPath(); ctx.roundRect(0,0,c.width,c.height,8); ctx.fill();
+  const W=c.width, H=c.height, cx=W/2, cy=H/2;
+  ctx.strokeStyle='rgba(255,255,255,0.08)'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.ellipse(cx,cy,W*0.43,H*0.43,0,0,Math.PI*2); ctx.stroke();
+  const incidents=[
+    {x:0.05,y:0.3,r:22,c:'rgba(255,77,109,0.4)',label:'7N'},
+    {x:0,y:-0.3,r:8,c:'rgba(255,179,71,0.35)',label:'N3'},
+    {x:0.35,y:0,r:14,c:'rgba(255,179,71,0.3)',label:'E2'},
+  ];
+  incidents.forEach(inc=>{
+    ctx.fillStyle=inc.c;
+    ctx.beginPath(); ctx.arc(cx+inc.x*W,cy+inc.y*H,inc.r,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,0.7)'; ctx.font='bold 9px JetBrains Mono,monospace';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(inc.label,cx+inc.x*W,cy+inc.y*H);
+  });
+}
+
+// ===== FAN TAB =====
+const fanFeatures=[
+  {icon:'🗺',title:'Smart Indoor Navigation','desc':'Turn-by-turn AR directions to your seat, restrooms, concessions'},
+  {icon:'⏱',title:'Live Queue Intelligence','desc':'Real-time wait times for all gates, concessions, and facilities'},
+  {icon:'📱',title:'Mobile Seat Upgrade','desc':'Instant upgrade offers for empty premium seats near you'},
+  {icon:'🍕',title:'Seat Delivery Ordering','desc':'Order food and drinks delivered directly to your seat number'},
+  {icon:'🚨',title:'Instant Safety Alerts','desc':'Proactive crowd warnings with alternative route suggestions'},
+  {icon:'🎫',title:'Digital Wallet','desc':'Contactless ticket scanning, parking, and payment in one app'},
+];
+document.getElementById('fan-features').innerHTML = `
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+    ${fanFeatures.map(f=>`
+      <div style="background:var(--bg3);border-radius:8px;padding:12px">
+        <div style="font-size:18px;margin-bottom:6px">${f.icon}</div>
+        <div style="font-size:12px;font-weight:600;margin-bottom:3px">${f.title}</div>
+        <div style="font-size:11px;color:var(--text2);line-height:1.4">${f.desc}</div>
+      </div>`).join('')}
+  </div>`;
+
+const notifs=[
+  {type:'smart',text:'🏟 Kickoff in 15 min — Head to your seat now via Gate D (shorter queue)'},
+  {type:'alert',text:'🍺 Halftime deal: 2-for-1 drinks at Stand A2 · Only 8 min wait'},
+  {type:'nav',text:'🚻 Nearest restroom: 90m • Level 2 East — no queue now'},
+  {type:'exit',text:'🚗 Post-match: Exit via Gate A for fastest route to Parking Zone B'},
+];
+document.getElementById('fan-notifs').innerHTML = notifs.map(n=>`
+  <div style="display:flex;gap:10px;padding:10px;background:var(--bg3);border-radius:8px;margin-bottom:8px;font-size:12px;line-height:1.5;color:var(--text2)">
+    ${n.text}
+  </div>`).join('');
+
+// ===== LIVE DATA UPDATES =====
+function jitter(val, pct) { return val + (Math.random()-0.5)*val*pct; }
+setInterval(()=>{
+  document.getElementById('m-occ').textContent = Math.round(jitter(68420,0.001)).toLocaleString();
+  document.getElementById('m-wait').innerHTML = jitter(4.2,0.08).toFixed(1)+'<span style="font-size:14px">min</span>';
+  document.getElementById('m-flow').textContent = Math.round(jitter(2840,0.04)).toLocaleString();
+  document.getElementById('vel-n').textContent = jitter(1.8,0.06).toFixed(1);
+  document.getElementById('vel-e').textContent = jitter(0.9,0.08).toFixed(1);
+  document.getElementById('vel-s').textContent = jitter(2.1,0.05).toFixed(1);
+}, 3000);
+
+// ===== INIT CROWD TAB CANVAS ON LOAD =====
+setTimeout(drawIncidentMap, 500);
+</script>
+</body>
+</html>
